@@ -1,0 +1,33 @@
+// Checks the Junior D demo seed against the real schema (twice, to prove it's re-runnable).
+import { PGlite } from "@electric-sql/pglite";
+import { readFileSync } from "node:fs";
+import assert from "node:assert/strict";
+const db = new PGlite();
+await db.exec(`
+  create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
+  create schema auth; create schema storage;
+  create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb);
+  create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+  create table storage.buckets (id text primary key, name text, public boolean);
+  create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text);
+  alter table storage.objects enable row level security;`);
+await db.exec(readFileSync(new URL("../supabase/migrations/0001_schema.sql", import.meta.url), "utf8"));
+const seed = readFileSync(new URL("../supabase/seed_junior_d_2026.sql", import.meta.url), "utf8");
+await assert.rejects(db.exec(seed), /Sign up on the site first/);
+await db.query(`insert into auth.users values ('00000000-0000-0000-0000-00000000000a', 'mark@x.ie', '{"full_name":"Mark McKeigue"}')`);
+await db.exec(seed); await db.exec(seed);
+const q = async (sql) => (await db.query(sql)).rows;
+const [t] = await q(`select t.*, a.name age from teams t left join age_groups a on a.id = t.age_group_id`);
+assert.equal(t.name, "Junior D 2026"); assert.equal(t.age, "Adult");
+assert.equal((await q(`select * from team_members where role='owner'`)).length, 1);
+assert.equal((await q(`select * from players`)).length, 26);
+assert.equal((await q(`select * from team_players`)).length, 26);
+assert.equal((await q(`select * from events`)).length, 1);
+const sel = await q(`select p.first_name||' '||p.last_name n, s.grp, s.slot from selections s join players p on p.id=s.player_id order by s.grp desc, s.slot`);
+assert.equal(sel.filter((s) => s.grp === "starter").length, 15);
+assert.equal(sel.filter((s) => s.grp === "sub").length, 11);
+assert.equal(sel.find((s) => s.slot === 1).n, "Emmett Goode");
+assert.equal(sel.find((s) => s.slot === 15).n, "Martin Mannion");
+assert.ok(sel.some((s) => s.n === "Conor O'Droma" && s.grp === "sub"));
+assert.ok(sel.some((s) => s.n === "Oisín Donnelly" && s.slot === 4));
+console.log("Seed OK: Junior D 2026, 26 players (15 starters + 11 subs), demo match, re-runnable.");
