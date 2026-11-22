@@ -43,7 +43,17 @@ These rules are enforced **inside the database** (Row Level Security), not just 
 5. **Project Settings → API**: copy the **Project URL** and the **anon public** key.
 
 ### 2. Put the code on GitHub
-Create a private repo (e.g. `kiltormer-gaa`) and upload this folder (without `node_modules`).
+Vercel builds the site from a copy of the code on GitHub, so the code needs to go there first.
+
+1. Unzip `kiltormer-gaa.zip`. You get one folder, `kiltormer-gaa`, which holds everything (about 70 files). Upload all of it; there's nothing to remove. (`node_modules` is the downloaded-libraries folder that appears if you run the app on your own computer. It isn't in the zip and should never be uploaded.)
+2. On github.com (free account), click **+ → New repository**. Name it `kiltormer-gaa`, choose **Private**, and click **Create repository**.
+3. On the empty repo page, click **uploading an existing file**.
+4. Open the `kiltormer-gaa` folder on your computer, select **everything inside it** (not the folder itself), and drag it onto the page. The sub-folders (`app`, `components`, `lib`, `public`, `supabase`, `tests`) upload with their contents. Click **Commit changes**.
+5. Check that the repo's top level shows `package.json`, `app`, `supabase` and so on. If you only see a single `kiltormer-gaa` folder, you dragged the folder itself: delete the repo and drag its contents instead.
+
+On a Mac, files starting with a dot (`.gitignore`, `.env.example`) are hidden, so they may not upload. That's fine; the site doesn't need them.
+
+Prefer an app? **GitHub Desktop** does the same thing: File → Add local repository → pick the folder → Publish (tick "Keep this code private").
 
 ### 3. Vercel (hosting)
 1. vercel.com → sign in with GitHub → **Add New → Project** → import the repo.
@@ -70,6 +80,12 @@ npm run test:seed            # check the demo-squad script
 ```
 
 ---
+
+## Making changes
+1. Ask Claude for the change. Claude works on a branch and opens a pull request on GitHub.
+2. Vercel builds a **preview link** for that branch (shown on the pull request). Try it there; the live site isn't touched.
+3. If the change needs a database update, the pull request includes a new file in `supabase/migrations/` (e.g. `0002_….sql`). Run it in Supabase → SQL Editor **before** merging.
+4. Click **Merge** on GitHub. Vercel puts it live within a minute or two.
 
 ## Videos and storage
 - **Best option for video:** upload to the club YouTube channel as **Unlisted** and add the link as a *Video* resource. It plays inside the hub and costs nothing.

@@ -374,6 +374,14 @@ begin
   delete from players where id = drop_id;
 end $$;
 
+-- Explicit grants (newer Supabase projects may not expose new tables to the API automatically).
+-- Row Level Security above still decides which rows each user can touch.
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+grant usage, select on all sequences in schema public to authenticated;
+revoke update on public.profiles from authenticated, anon;
+grant update (full_name) on public.profiles to authenticated;
+
 revoke execute on all functions in schema public from public, anon;
 grant execute on all functions in schema public to authenticated, service_role;
 
